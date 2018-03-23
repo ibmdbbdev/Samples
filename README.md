@@ -15,5 +15,6 @@ A sample to detect possible round-trip encoding issues.
 A sample showing how to extend Build Report to display Git hash value for each file.
 
 ## References
-For more information see the Knowlege Center XXXXX
-For information about the product see XXXXX
+For more information see the [Knowlege Center](https://www.ibm.com/support/knowledgecenter/SS6T76_1.0.0/welcome.html)
+
+For information about the product see [IBM Dependency Based Build](https://developer.ibm.com/mainframe/products/ibm-dependency-based-build/)
