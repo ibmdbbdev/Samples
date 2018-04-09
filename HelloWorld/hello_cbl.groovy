@@ -1,10 +1,10 @@
 import com.ibm.dbb.build.*
 
-println("Copying source from zFS to PDS . . .")
-def copy = new CopyToPDS().file(new File("/u/usr1/build/helloworld.cbl")).dataset("USR1.BUILD.COBOL").member("HELLO")
+println("Copying /u/usr1/build/hello.cbl to USR1.BUILD.COBOL(HELLO) . . .")
+def copy = new CopyToPDS().file(new File("/u/usr1/build/hello.cbl")).dataset("USR1.BUILD.COBOL").member("HELLO")
 copy.execute()
 
-println("Compiling . . .")
+println("Compiling USR1.BUILD.COBOL(HELLO). . .")
 def compile = new MVSExec().pgm("IGYCRCTL").parm("LIB")
 compile.dd(new DDStatement().name("SYSIN").dsn("USR1.BUILD.COBOL(HELLO)").options("shr"))
 compile.dd(new DDStatement().name("SYSLIN").dsn("USR1.BUILD.OBJ(HELLO)").options("shr"))
@@ -28,10 +28,11 @@ compile.dd(new DDStatement().name("SYSUT17").options("cyl space(5,5) unit(vio) n
 compile.dd(new DDStatement().name("SYSMDECK").options("cyl space(5,5) unit(vio) new"))
 compile.dd(new DDStatement().name("TASKLIB").dsn("IGY.V6R1M0.SIGYCOMP").options("shr"))
 compile.dd(new DDStatement().name("SYSPRINT").options("cyl space(5,5) unit(vio)  new"))
-compile.copy(new CopyToHFS().ddName("SYSPRINT").file(new File("/u/usr1/build/helloworld.log")))
+compile.copy(new CopyToHFS().ddName("SYSPRINT").file(new File("/u/usr1/build/hello.log")))
 def rc = compile.execute()
 
 if (rc > 4)
     println("Compile failed!  RC=$rc")
 else
     println("Compile successful!  RC=$rc")
+
