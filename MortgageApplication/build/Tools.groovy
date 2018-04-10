@@ -72,7 +72,9 @@ def loadProperties(OptionAccessor opts) {
 	// load datasets.properties containing system specific PDS names used by Mortgage Application build
 	properties.load(new File("$properties.sourceDir/MortgageApplication/build/datasets.properties"))
 	// load file.properties containing file specific properties like script mappings and CICS/DB2 content flags
-	properties.load(new File("$properties.sourceDir/MortgageApplication/build/file.properties"))    
+	properties.load(new File("$properties.sourceDir/MortgageApplication/build/file.properties"))  
+	// load bind.properties containing DB2 BIND PACKAGE parameters used by Mortgage Application build
+	properties.load(new File("$properties.sourceDir/MortgageApplication/build/bind.properties"))    
 
 	println("** Build properties at startup:")
 	println(properties.list()) 

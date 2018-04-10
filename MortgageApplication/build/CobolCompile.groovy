@@ -144,3 +144,9 @@ if (rc <= 4) {
 }    
 
 job.stop()
+
+// run DB2 Bind PACKAGE if bind is turned on (see MortgageApplication/build/bind.properties)
+if (logicalFile.isSQL() && properties.RUN_DB2_BIND.toBoolean()) {
+    def scriptName = "$properties.sourceDir/MortgageApplication/build/BindPackage.groovy"
+    run(new File(scriptName), [file] as String[])
+}

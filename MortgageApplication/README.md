@@ -9,6 +9,7 @@ The Mortgage Application sample is comprised of a COBOL application and Groovy b
 * How to store build results in the DBB repository for later retrieval
 * How to perform incremental builds by identifying changed files since the last build and discover impacted programs that need rebuilding
 * How to run a post build process to create an UrbanCode Deploy shiplist from a saved DBB build report 
+* How to build a DB2 application package for SQL programs.
 
 ## Configuring the Mortgage Application Sample for your system
 All of the build files are located in the `MortgageApplication/build` folder.  The folder contains two properties files that need to be edited before the Mortgage Application build scripts can run successfully.  The files contain instructions on what needs to be set.
@@ -24,6 +25,7 @@ This is the main build script for building the Mortgage Application.  It perform
 * Compile.groovy - Script that demonstrates how to just compile a COBOL program to produce a object deck
 * LinkEdit.groovy - Script that demonstrates how to link-edit object decks to produce a load module
 * CobolCompile.groovy - Script that demonstrates how to compile and link-edit COBOL programs in one script
+     * BindPackage.groovy - Script that demonstrates how to build a DB2 application package for SQL programs. Called from CobolCompile.groovy.
 * MFSGENUtiltiy.groovy - Script that demonstrates how to build IMS Message Format Service (MFS) files
 * Tools.groovy - Script that provides common utility Groovy methods used by the build scripts.
 
