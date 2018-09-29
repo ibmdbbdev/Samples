@@ -10,3 +10,15 @@
 *.groovy working-tree-encoding=ibm-1047 git-encoding=utf-8
 *.sh working-tree-encoding=ibm-1047 git-encoding=utf-8
 *.properties working-tree-encoding=ibm-1047 git-encoding=utf-8
+*.asm working-tree-encoding=ibm-1047 git-encoding=utf-8
+*.jcl working-tree-encoding=ibm-1047 git-encoding=utf-8
+*.data working-tree-encoding=ibm-1047 git-encoding=utf-8
+*.exec working-tree-encoding=ibm-1047 git-encoding=utf-8
+*.mac working-tree-encoding=ibm-1047 git-encoding=utf-8
+*.c working-tree-encoding=ibm-1047 git-encoding=utf-8
+*.opt working-tree-encoding=ibm-1047 git-encoding=utf-8
+*.h working-tree-encoding=ibm-1047 git-encoding=utf-8
+*.plx working-tree-encoding=ibm-1047 git-encoding=utf-8
+*.copy working-tree-encoding=ibm-1047 git-encoding=utf-8
+*.lmod working-tree-encoding=ibm-1047 git-encoding=utf-8
+*.dtl working-tree-encoding=ibm-1047 git-encoding=utf-8

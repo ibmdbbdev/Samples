@@ -1,3 +1,4 @@
+@groovy.transform.BaseScript com.ibm.dbb.groovy.ScriptLoader baseScript
 import com.ibm.dbb.build.*
 import com.ibm.dbb.repository.*
 import com.ibm.dbb.dependency.*
@@ -11,7 +12,7 @@ import com.ibm.dbb.dependency.*
 */
 
 // receive passed arguments
-def file = args[0]
+def file = argMap.file
 println("* Binding $file using ${this.class.getName()}.groovy script")
 
 // define local properties
@@ -63,7 +64,5 @@ bind.dd(new DDStatement().name("CMDSCP").dsn(cmdscpDS).options("shr"))
 def rc = bind.execute()
 
 // add the DB2 BIND status to the build result
-File scriptFile = new File("$properties.sourceDir/MortgageApplication/build/Tools.groovy")
-Class groovyClass = new GroovyClassLoader(getClass().getClassLoader()).parseClass(scriptFile)
-GroovyObject tools = (GroovyObject) groovyClass.newInstance()
+def tools = loadScript(new File("Tools.groovy"))
 tools.updateBuildResult(file:"$file", rc:rc, maxRC:0, log:logFile)

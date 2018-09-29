@@ -1,9 +1,10 @@
+@groovy.transform.BaseScript com.ibm.dbb.groovy.ScriptLoader baseScript
 import com.ibm.dbb.repository.*
 import com.ibm.dbb.dependency.*
 import com.ibm.dbb.build.*
 
 // receive passed arguments
-def file = args[0]
+def file = argMap.file
 println("* Building $file using ${this.class.getName()}.groovy script")
 
 // define local properties
@@ -16,9 +17,7 @@ def member = CopyToPDS.createMemberName(file)
 def logFile = new File("${properties.workDir}/${member}.log")
 
 // create a reference to the Tools.groovy utility script
-File scriptFile = new File("$properties.sourceDir/MortgageApplication/build/Tools.groovy")
-Class groovyClass = new GroovyClassLoader(getClass().getClassLoader()).parseClass(scriptFile)
-GroovyObject tools = (GroovyObject) groovyClass.newInstance()
+def tools = loadScript(new File("Tools.groovy"))
 
 // define the BPXWDYN options for allocated temporary datasets
 def tempCreateOptions = "tracks space(5,5) unit(vio) blksize(80) lrecl(80) recfm(f,b) new"

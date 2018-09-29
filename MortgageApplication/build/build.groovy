@@ -1,3 +1,4 @@
+@groovy.transform.BaseScript com.ibm.dbb.groovy.ScriptLoader baseScript
 import com.ibm.dbb.build.*
 import com.ibm.dbb.build.report.*
 import com.ibm.dbb.repository.*
@@ -39,10 +40,7 @@ import groovy.time.*
  */
  
 // load the Tools.groovy utility script
-def scriptDir = new File(getClass().protectionDomain.codeSource.location.path).parent
-File sourceFile = new File("$scriptDir/Tools.groovy")
-Class groovyClass = new GroovyClassLoader(getClass().getClassLoader()).parseClass(sourceFile)
-GroovyObject tools = (GroovyObject) groovyClass.newInstance()
+def tools = loadScript(new File("Tools.groovy"))
 
 // parse command line arguments and load build properties
 def usage = "build.groovy [options] buildfile"
@@ -50,7 +48,7 @@ def opts = tools.parseArgs(args, usage)
 def properties = tools.loadProperties(opts)
 tools.validateRequiredProperties(["sourceDir", "workDir", "hlq"])
 if (!properties.userBuild) 
-	tools.validateRequiredProperties(["repo", "id", "password", "collection"])
+	tools.validateRequiredProperties(["dbb.RepositoryClient.url", "dbb.RepositoryClient.userId", "password", "collection"])
 
 def startTime = new Date()
 properties.startTime = startTime.format("yyyyMMdd.hhmmss.mmm")
@@ -103,7 +101,7 @@ if (buildList.size() == 0)
 	println("** No files in build list.  Nothing to build.")
 else {
 	// build programs by invoking the appropriate build script
-	def buildOrder = ["BMSProcessing", "Compile", "LinkEdit", "CobolCompile"]
+	def buildOrder = ["BMSProcessing", "Compile", "CobolCompile", "LinkEdit"]
 	// optionally execute IMS MFS builds
 	if (properties.BUILD_MFS.toBoolean()) 
 		buildOrder << "MFSGENUtility"
@@ -112,9 +110,8 @@ else {
 	buildOrder.each { script ->
     	// Use the ScriptMappings class to get the files mapped to the build script
 		def buildFiles = ScriptMappings.getMappedList(script, buildList)
-		def scriptName = "$properties.sourceDir/MortgageApplication/build/${script}.groovy"
 		buildFiles.each { file ->
-	    	run(new File(scriptName), [file] as String[])
+			runScript(new File("${script}.groovy"), ["file":file])
 			processCounter++
 		}
 	}

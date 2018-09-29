@@ -1,9 +1,10 @@
+@groovy.transform.BaseScript com.ibm.dbb.groovy.ScriptLoader baseScript
 import com.ibm.dbb.repository.*
 import com.ibm.dbb.dependency.*
 import com.ibm.dbb.build.*
 
 // receive passed arguments
-def file = args[0]
+def file = argMap.file
 println("* Building $file using ${this.class.getName()}.groovy script")
 
 // define local properties
@@ -15,9 +16,7 @@ def member = CopyToPDS.createMemberName(file)
 def logFile = new File("${properties.workDir}/${member}.log")
 
 // create a reference to the Tools.groovy utility script
-File scriptFile = new File("$properties.sourceDir/MortgageApplication/build/Tools.groovy")
-Class groovyClass = new GroovyClassLoader(getClass().getClassLoader()).parseClass(scriptFile)
-GroovyObject tools = (GroovyObject) groovyClass.newInstance()
+def tools = loadScript(new File("Tools.groovy"))
 
 // define the BPXWDYN options for allocated temporary datasets
 def tempCreateOptions = "tracks space(5,5) unit(vio) blksize(80) lrecl(80) recfm(f,b) new"
@@ -49,3 +48,25 @@ def rc = linkedit.execute()
 
 // update build result
 tools.updateBuildResult(file:"$file", rc:rc, maxRC:0, log:logFile)
+
+// Scan the load module to determine LINK dependencies. Impact resolver can use these to determine that
+// this file gets rebuilt if a LINK dependency changes.
+if ( rc == 0 && !properties.userBuild ) {
+	println("* Scanning $loadPDS($member) for load module dependencies.")
+	def scanner = new LinkEditScanner()
+   	def logicalFile = scanner.scan(file, loadPDS)
+
+	// create the outputs collection if needed.
+	// NOTE: The outputs collection should be separate from properties.collection otherwise these dependencies will
+	//       be overwritten when the source is changed and scanned by source code scanner.
+	// NOTE: The outputs collection must be included in ImpactResolver in Tools.groovy to include these outputs
+	//       during impact analysis.
+	def outputs_collection = "${properties.collection}_outputs"
+	def repositoryClient = tools.getDefaultRepositoryClient()
+	if (!repositoryClient.collectionExists(outputs_collection)) {
+    	repositoryClient.createCollection(outputs_collection) 
+	}
+	
+	// Store logical file and indirect dependencies to the outputs collection
+	repositoryClient.saveLogicalFile( outputs_collection, logicalFile );
+}
