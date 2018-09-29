@@ -14,7 +14,10 @@ A sample to detect possible round-trip encoding issues.
 ### Extend Build Report
 A sample showing how to extend Build Report to display Git hash value for each file.
 
-## References
+### Support Running MVSJob in Multi-Thread
+A sample showing how to convert a simple script to run MVSJob in parallel.
+
+## ReferencesFor
 For more information see the [Knowlege Center](https://www.ibm.com/support/knowledgecenter/SS6T76_1.0.0/welcome.html)
 
 For information about the product see [IBM Dependency Based Build](https://developer.ibm.com/mainframe/products/ibm-dependency-based-build/)

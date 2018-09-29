@@ -8,15 +8,7 @@
 *                                                                     * 
 *   DESCRIPTION:  MFS FOR TRAN IVTNO - NON-CONVERSATIONAL HIDAM/OSAM  * 
 *                                                                     * 
-**************************************************************@SCPYRT** 
-*                                                                     * 
-*         Licensed Materials - Property of IBM                        * 
-*                                                                     * 
-*         "Restricted Materials of IBM"                               * 
-*                                                                     * 
-*         5655-158 (C) Copyright IBM Corp. 1974,1991                  * 
-*                                                                     * 
-**************************************************************@ECPYRT** 
+***********************************************************************  
 *                                                                     * 
 *        STATUS:  IMS 3.1                                             * 
 *                                                                     * 

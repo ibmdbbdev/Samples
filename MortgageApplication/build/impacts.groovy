@@ -1,3 +1,4 @@
+@groovy.transform.BaseScript com.ibm.dbb.groovy.ScriptLoader baseScript
 import com.ibm.dbb.build.*
 import com.ibm.dbb.repository.*
 import com.ibm.dbb.dependency.*
@@ -33,16 +34,14 @@ import groovy.time.*
  */
  
 // load the Tools.groovy utility script
-def scriptDir = new File(getClass().protectionDomain.codeSource.location.path).parent
-File sourceFile = new File("$scriptDir/Tools.groovy")
-Class groovyClass = new GroovyClassLoader(getClass().getClassLoader()).parseClass(sourceFile)
-GroovyObject tools = (GroovyObject) groovyClass.newInstance()
+def tools = loadScript(new File("Tools.groovy"))
+def scriptDir = getScriptDir()
 
 // parse command line arguments and load build properties
 def usage = "impact.groovy [options]"
 def opts = tools.parseArgs(args, usage)
 def properties = tools.loadProperties(opts)
-tools.validateRequiredProperties(["sourceDir", "workDir", "repo", "id", "password", "collection"])
+tools.validateRequiredProperties(["sourceDir", "workDir", "dbb.RepositoryClient.url", "dbb.RepositoryClient.userId", "password", "collection"])
 	
 def startTime = new Date()
 properties.startTime = startTime.format("yyyyMMdd.hhmmss.mmm")
@@ -131,18 +130,16 @@ changedFiles.each { changedFile ->
    		buildList.add(changedFile)
    		println("Found build script mapping for $changedFile. Adding to build list.")
    }
-   else {
-        println("Searching for programs impacted by changed file $changedFile")
-   		def resolver = tools.getDefaultImpactResolver(changedFile)
-   		def impacts = resolver.resolve()
-   		impacts.each { impact ->
-   			def impactFile = impact.getFile()
-   			// only add impacted files that have a build script mapped to it
-   			if (ScriptMappings.getScriptName(impactFile)) {
-   		    	println("$impactFile is impacted by changed file $changedFile. Adding to build list.")
-   				buildList.add(impactFile)
-   			}
-   		}
+   println("Searching for programs impacted by changed file $changedFile")
+   def resolver = tools.getDefaultImpactResolver(changedFile)
+   def impacts = resolver.resolve()
+   impacts.each { impact ->
+   	  def impactFile = impact.getFile()
+   	  // only add impacted files that have a build script mapped to it
+   	  if (ScriptMappings.getScriptName(impactFile)) {
+   	     println("$impactFile is impacted by changed file $changedFile. Adding to build list.")
+   		 buildList.add(impactFile)
+   	  }
    }
 }
 

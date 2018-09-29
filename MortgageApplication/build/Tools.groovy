@@ -1,3 +1,4 @@
+@groovy.transform.BaseScript com.ibm.dbb.groovy.ScriptLoader baseScript
 import com.ibm.dbb.build.*
 import com.ibm.dbb.build.report.*
 import com.ibm.dbb.build.html.*
@@ -35,8 +36,7 @@ def parseArgs(String[] cliArgs, String usage) {
 def loadProperties(OptionAccessor opts) {
 	// check to see if there is a ./build.properties to load
 	def properties = BuildProperties.getInstance()
-	def scriptDir = new File(getClass().protectionDomain.codeSource.location.path).parent
-	def buildPropFile = new File("$scriptDir/build.properties")
+	def buildPropFile = new File("${getScriptDir()}/build.properties")
 	if (buildPropFile.exists())
    		BuildProperties.load(buildPropFile)
 
@@ -47,13 +47,15 @@ def loadProperties(OptionAccessor opts) {
 	if (opts.q) properties.hlq = opts.q
 	if (opts.c) properties.collection = opts.c
 	if (opts.t) properties.team = opts.t
-	if (opts.r) properties.repo = opts.r
-	if (opts.i) properties.id = opts.i
-	if (opts.p) properties.pw = opts.p
-	if (opts.P) properties.pwFile = opts.P
 	if (opts.e) properties.logEncoding = opts.e
 	if (opts.E) properties.errPrefix = opts.E
 	if (opts.u) properties.userBuild = "true"
+	
+	// override new default properties 
+	if (opts.r) properties.'dbb.RepositoryClient.url' = opts.r
+	if (opts.i) properties.'dbb.RepositoryClient.userId' = opts.i
+	if (opts.p) properties.'dbb.RepositoryClient.password' = opts.p
+	if (opts.P) properties.'dbb.RepositoryClient.passwordFile' = opts.P
 	
 	// handle --clean option
 	if (opts.C)  {
@@ -70,11 +72,13 @@ def loadProperties(OptionAccessor opts) {
 	}
 
 	// load datasets.properties containing system specific PDS names used by Mortgage Application build
-	properties.load(new File("$properties.sourceDir/MortgageApplication/build/datasets.properties"))
+	properties.load(new File("${getScriptDir()}/datasets.properties"))
 	// load file.properties containing file specific properties like script mappings and CICS/DB2 content flags
-	properties.load(new File("$properties.sourceDir/MortgageApplication/build/file.properties"))  
+	properties.load(new File("${getScriptDir()}/file.properties")) 
 	// load bind.properties containing DB2 BIND PACKAGE parameters used by Mortgage Application build
-	properties.load(new File("$properties.sourceDir/MortgageApplication/build/bind.properties"))    
+	properties.load(new File("${getScriptDir()}/bind.properties"))    
+	// load bindlinkEditScanner.properties containing Link Edit scanning options used by Mortgage Application build
+	properties.load(new File("${getScriptDir()}/linkEditScanner.properties"))
 
 	println("** Build properties at startup:")
 	println(properties.list()) 
@@ -85,11 +89,11 @@ def loadProperties(OptionAccessor opts) {
 def validateRequiredProperties(List<String> props) {
     def properties = BuildProperties.getInstance()
     props.each { prop ->
-        // handle password special case i.e. can have either pw or pwFile
+        // handle password special case i.e. can have either password or passwordFile
     	if (prop.equals("password")) {
-    		 if (!(properties.pw || properties.pwFile)) {
-		     	assert properties.pw : "Missing property pw"
-		      	assert properties.pwFile : "Missing property pwFile"
+    		if (!(properties.'dbb.RepositoryClient.password' || properties.'dbb.RepositoryClient.passwordFile')) {
+		     	assert properties.'dbb.RepositoryClient.password' : "Missing property 'dbb.RepositoryClient.password'"
+		      	assert properties.'dbb.RepositoryClient.passwordFile' : "Missing property 'dbb.RepositoryClient.passwordFile'"
 	       }
     	}
     	else {
@@ -129,8 +133,8 @@ def getBuildList(List<String> args) {
 	}   
 	// build the entire Mortgage Application listed in files.txt   
 	else { 
-	    println("** Building files listed in $properties.sourceDir/MortgageApplication/build/files.txt")
-	    files = new File("$properties.sourceDir/MortgageApplication/build/files.txt") as List<String>
+	    println("** Building files listed in ${getScriptDir()}/files.txt")
+	    files = new File("${getScriptDir()}/files.txt") as List<String>
 	}	
 	return files
 }
@@ -159,17 +163,7 @@ def createDatasets() {
 
 def getDefaultRepositoryClient() {
     def properties = BuildProperties.getInstance()
-	def repositoryClient = new RepositoryClient().url(properties.repo)
-						     .userId(properties.id)
-						     .forceSSLTrusted(true)
-    if (properties.pw)
-		repositoryClient.setPassword(properties.pw)
-    else if (properties.pwFile) {
-        def pFile = properties.pwFile
-   		if (!pFile.startsWith("/"))
-    		pFile = "$properties.sourceDir/$properties.pwFile"
-		repositoryClient.setPasswordFile(new File(pFile))
-	}
+	def repositoryClient = new RepositoryClient().forceSSLTrusted(true)
 	return repositoryClient
 }
 
@@ -236,9 +230,28 @@ def getDefaultDependencyResolver(String file) {
 
 def getDefaultImpactResolver(String file) {
 	def properties = BuildProperties.getInstance()
-   	def path = new DependencyPath().sourceDir(properties.sourceDir).directory("MortgageApplication/copybook")
-   	def rule = new ResolutionRule().library("SYSLIB").path(path)
-   	def resolver = new ImpactResolver().repositoryClient(getDefaultRepositoryClient()).collection(properties.collection).rule(rule).file(file)
+	
+	// Add rule to assocuate changes to copybooks with the need to recompile programs that reference them.
+   	def cpypath = new DependencyPath().collection(properties.collection).sourceDir(properties.sourceDir).directory("MortgageApplication/copybook")
+   	def cpyrule = new ResolutionRule().library("SYSLIB").path(cpypath)
+	   
+	// Add rule to associate changes to BMS maps with need to recompile programs that use the generated copybook.
+   	def bmspath = new DependencyPath().collection(properties.collection).sourceDir(properties.sourceDir).directory("MortgageApplication/bms")
+   	def bmsrule = new ResolutionRule().library("SYSLIB").path(bmspath)
+	   
+	// Add rule to associate changes to COBOL source with the need to linkedit .lnk files that reference them.
+   	def cobpath = new DependencyPath().collection(properties.collection).sourceDir(properties.sourceDir).directory("MortgageApplication/cobol")
+   	def coblnkrule = new ResolutionRule().category("LINK").path(cobpath)
+	def cobrule = new ResolutionRule().category("COB").path(cobpath)
+	   
+   	def resolver = new ImpactResolver().repositoryClient(getDefaultRepositoryClient())
+	   .collection(properties.collection)
+	   .collection("${properties.collection}_outputs")  // Name must agree with outputs collection used in LinkEdit.groovy and CobolCompile.groovy
+	   .rule(cpyrule)
+	   .rule(bmsrule)
+	   .rule(cobrule)
+	   .rule(coblnkrule)
+	   .file(file)
    	return resolver
 }
 
