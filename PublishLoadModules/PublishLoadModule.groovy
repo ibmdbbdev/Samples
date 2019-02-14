@@ -1,6 +1,8 @@
+@groovy.transform.BaseScript com.ibm.dbb.groovy.ScriptLoader baseScript
 import java.io.File
 import java.io.UnsupportedEncodingException
 import java.security.MessageDigest
+import java.text.SimpleDateFormat
 import org.apache.http.entity.FileEntity
 import com.ibm.dbb.build.*
 import com.ibm.dbb.build.DBBConstants.CopyMode
@@ -14,7 +16,16 @@ import groovyx.net.http.RESTClient
  *
  ************************************************************************************/
 
-def properties = BuildProperties.getInstance()
+def currentDir = new File(getClass().protectionDomain.codeSource.location.path).parent
+
+// load the Tools.groovy utility script
+def tools = loadScript(new File("$currentDir/Tools.groovy"))
+
+// parse command line arguments and load build properties
+def usage = "PublishLoadModule.groovy [options]"
+def opts = tools.parseArgs(args, usage)
+def properties = tools.loadProperties(opts)
+
 def workDir = properties.workDir
 def loadDatasets = properties.loadDatasets
 
@@ -73,10 +84,18 @@ loadDatasetToMembersMap.each { dataset, members ->
     }
 }
 
+// Append build report
+def exportBuildReport = new File("$tempLoadDir/BuildReport.json")
+exportBuildReport << buildReportFile.text
+
+def date = new Date()
+def sdf = new SimpleDateFormat("yyyyMMdd-HHmmss")
+def startTime = sdf.format(date) as String
+
 //Package the load files just copied into a tar file using the build
 //label as the name for the tar file.
 def buildGroup = "${properties.collection}" as String
-def buildLabel = "build.${properties.startTime}" as String
+def buildLabel = "build.$startTime" as String
 def tarFile = new File("$tempLoadDir/${buildLabel}.tar")
 def tarOut = ["sh", "-c", "cd $tempLoadDir && tar cf $tarFile *"].execute().text
 
@@ -87,7 +106,7 @@ def artifactoryKey = properties.get("artifactory.apiKey") as String
 def remotePath = "${buildGroup}/${tarFile.name}"
 
 //Call the ArtifactoryHelpers to publish the tar file
-File artifactoryHelpersFile = new File('./ArtifactoryHelpers.groovy')
+File artifactoryHelpersFile = new File("$currentDir/ArtifactoryHelpers.groovy")
 Class artifactoryHelpersClass = new GroovyClassLoader(getClass().getClassLoader()).parseClass(artifactoryHelpersFile)
 GroovyObject artifactoryHelpers = (GroovyObject) artifactoryHelpersClass.newInstance()
 artifactoryHelpers.publish(artifactoryURL, artifactoryRepo, artifactoryKey, remotePath, tarFile)
