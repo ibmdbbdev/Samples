@@ -74,9 +74,7 @@ loadDatasetToMembersMap.each { dataset, members ->
 def buildGroup = "${properties.collection}" as String
 def buildLabel = "build.${properties.startTime}" as String
 def tarFile = new File("$tempLoadDir/${buildLabel}.tar")
-def process = "tar -cvf $tarFile .".execute(null, tempLoadDir)
-int rc = process.waitFor()
-assert rc == 0, "Failed to package load modules" 
+def tarOut = ["sh", "-c", "cd $tempLoadDir && tar cf $tarFile *"].execute().text
 
 //Set up the artifactory information to publish the tar file
 def artifactoryURL = properties.get("artifactory.url") as String
