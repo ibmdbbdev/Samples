@@ -9,8 +9,8 @@ import com.ibm.dbb.build.report.records.DefaultRecordFactory
 import groovyx.net.http.RESTClient
 
 /************************************************************************************
- * This script publishes the outputs generated from a build to an artifactory
- * repository. 
+ * This script publishes the outputs generated from a build to an Artifactory
+ * repository.
  *
  ************************************************************************************/
 
@@ -79,18 +79,14 @@ int rc = process.waitFor()
 assert rc == 0, "Failed to package load modules" 
 
 //Set up the artifactory information to publish the tar file
-def url = properties.get('artifactory.url')
-def apiKey = properties.get('artifactory.apiKey')
-def repo = properties.get('artifactory.repo') as String
+def artifactoryURL = properties.get("artifactory.url") as String
+def artifactoryRepo = properties.get("artifactory.repo") as String
+def artifactoryKey = properties.get("artifactory.apiKey") as String
 def remotePath = "${buildGroup}/${tarFile.name}"
 
 //Call the ArtifactoryHelpers to publish the tar file
 File artifactoryHelpersFile = new File('./ArtifactoryHelpers.groovy')
 Class artifactoryHelpersClass = new GroovyClassLoader(getClass().getClassLoader()).parseClass(artifactoryHelpersFile)
 GroovyObject artifactoryHelpers = (GroovyObject) artifactoryHelpersClass.newInstance()
-artifactoryHelpers.publish(url, repo, apiKey, remotePath, tarFile)
-
-
-
-
+artifactoryHelpers.publish(artifactoryURL, artifactoryRepo, artifactoryKey, remotePath, tarFile)
 

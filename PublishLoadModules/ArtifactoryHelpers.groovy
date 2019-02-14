@@ -29,31 +29,30 @@ import groovyx.net.http.*
 /**
  * Publish a file from HFS to an artifactory repository at location specified in remoteFilePath
  */
-def publish(serverUrl, repo, apiKey, remoteFilePath, File localFile)
-{
+def publish(serverUrl, repo, apiKey, remoteFilePath, File localFile) {
     //Validate to make sure all required fields are specified
     assert serverUrl != null, "Need to specify a valid URL to artifactory server"
     assert repo != null, "Need to specify a valid artifactory repository"
     assert apiKey != null, "Need to specify a valid API key to authenticate with $repo"
     assert remoteFilePath != null, "Need to specify the path of the source file"
     assert localFile != null && localFile.exists(), "Target local file must exist"
-    
+
     //Artifactory URL must end with '/'
     def url = serverUrl.endsWith('/') ? serverUrl : serverUrl + '/'
 
     //Create SHA1 and MD5 checksums to be published along with the file
     def sha1 = getChecksum(localFile)
     def md5 = getChecksum(localFile, "MD5")
-       
-    def filePath = "$repo/$remoteFilePath" 
-    
+
+    def filePath = "$repo/$remoteFilePath"
+
     def restClient = new RESTClient(url)
     restClient.encoder.'application/zip' = this.&encodeZipFile
     def response = restClient.put(path: filePath, headers: ['X-JFrog-Art-Api' : apiKey, 'X-Checksum-Sha1' : sha1, 'X-Checksum-MD5' : md5], body: localFile, requestContentType: 'application/zip')
-    
+
     assert response.isSuccess(), "Failed to publish file $localFile"
-    
-    println "Successfully publish file $localFile to $filePath"
+
+    println "Successfully published file $localFile to $filePath"
 }
 
 /**
@@ -137,3 +136,4 @@ def static encodeZipFile(Object data) throws UnsupportedEncodingException
     entity.setContentType('application/zip');
     return entity
 }
+
