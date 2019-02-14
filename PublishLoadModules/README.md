@@ -2,10 +2,10 @@
 This sample shows how to publish load modules to an artifactory repository after a successful build, as well as download load modules from the artifactory repository and restore them into an existing data set.  Since all of interaction with artifactory repository requires files on zFS, load modules need to copy from data set to files on zFS and vice-versa.  This sample therefore also makes use of the new options introduced in CopyToPDS and CopyToHFS APIs to copy between data set and files on zFS.
 
 ## Prerequisites:
-This sample is built on top of the Mortgage Application Sample, so it requires a successful Mortgage setup.  It also requires a set of jar files which can be downloaded from Maven Central Repository.  These jar files are required for making REST service calls to Artifactory Repository using Groovy, see ArtifactoryHelpers.groovy for more details. 
+This sample is built on top of the General-Insurance Application Sample, so it requires a successful General-Insurance setup.  It also requires a set of jar files which can be downloaded from Maven Central Repository.  These jar files are required for making REST service calls to Artifactory Repository using Groovy, see ArtifactoryHelpers.groovy for more details. 
 
 ## Scenario 1 - Publishing load modules from a successful build
-1. After a successful Mortgage build, it retrieves all outputs from the build report.
+1. After a successful General-Insurance build, it retrieves all outputs from the build report.
 2. From the list of the outputs, it filters the load modules based on the data sets specified in the build property 'loadDatasets'. For example: the build report could contain outputs from BMS, for example: USER1.DBB.COPYBOOKS(ESPMLIS), USER1.DBB.DBRM(EPSCMORT), USER1.DBB.LOAD(EPSCMORT), but the user is only interested in publishing load modules in USER1.DBB.LOAD. The build property 'loadDatasets' should then be set to  'USER1.DBB.LOAD' 
 3. It then invokes CopyToHFS to copy the load modules from the PDSe to a temporary directory on zFS.
 4. It packages these load files into a tar file, and compute the SHA1 and MD5 checksums.
