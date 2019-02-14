@@ -41,7 +41,7 @@ def publish(serverUrl, repo, apiKey, remoteFilePath, File localFile) {
     def url = serverUrl.endsWith('/') ? serverUrl : serverUrl + '/'
 
     //Create SHA1 and MD5 checksums to be published along with the file
-    def sha1 = getChecksum(localFile)
+    def sha1 = getChecksum(localFile, "SHA1")
     def md5 = getChecksum(localFile, "MD5")
 
     def filePath = "$repo/$remoteFilePath"
@@ -85,8 +85,8 @@ def download(serverUrl, repo, apiKey, remoteFilePath, File localFile)
     //the transfer is complete
     def expectedSha1 = response.headers['X-Checksum-Sha1'].value
     def expectedMd5 = response.headers['X-Checksum-Md5'].value    
-    def actualSha1 = getChecksum(localFile)
-    def actualMd5 = getChecksum(localFile, "MD5")    
+    def actualSha1 = getChecksum(localFile, "SHA1")
+    def actualMd5 = getChecksum(localFile, "MD5")
     assert actualSha1 == expectedSha1 && actualMd5 == expectedMd5, "The downloaded file $localFile does not have the right checksum"
     
     println "Successfully download $filePath to $localFile"
@@ -127,7 +127,11 @@ def getChecksum(File file, type = 'SHA1')
     
     def digest = MessageDigest.getInstance(type)
     digest.update(file.bytes)
-    return new BigInteger(1,digest.digest()).toString(16)
+    switch (type) {
+    case "SHA1": return new BigInteger(1,digest.digest()).toString(16).padLeft(40, '0'); break
+    case "MD5": return new BigInteger(1,digest.digest()).toString(16).padLeft(32, '0'); break
+    default: println "Unsupported type"
+    }
 }
 
 def static encodeZipFile(Object data) throws UnsupportedEncodingException
