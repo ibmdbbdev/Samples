@@ -60,12 +60,16 @@ tempLoadDir.mkdirs()
 //SSI and 
 CopyToHFS copy = new CopyToHFS().copyMode(CopyMode.LOAD)
 println "Number of load modules to publish: $loadCount"
+
+// Create dedicated directories for datasets (e.g. load modules and DBRMs)
 loadDatasetToMembersMap.each { dataset, members ->
+    datasetDir = new File("$tempLoadDir/$dataset")
+    datasetDir.mkdirs()
     members.each { member ->
         def fullyQualifiedDsn = "$dataset($member)"
-        def file = new File(tempLoadDir, member)
+        def file = new File(datasetDir, member)
         copy.dataset(dataset).member(member).file(file).copy()
-        println "Copying $dataset($member) to $tempLoadDir"
+        println "Copying $dataset($member) to $datasetDir"
     }
 }
 
