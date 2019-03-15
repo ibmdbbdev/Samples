@@ -126,5 +126,5 @@ def artifactoryComponent = properties.get("collection") as String
 File artifactoryHelpersFile = new File("$scriptDir/ArtifactoryHelpers.groovy")
 Class artifactoryHelpersClass = new GroovyClassLoader(getClass().getClassLoader()).parseClass(artifactoryHelpersFile)
 GroovyObject artifactoryHelpers = (GroovyObject) artifactoryHelpersClass.newInstance()
-artifactoryHelpers.publish(artifactoryURL, artifactoryRepo, artifactoryKey, "$artifactoryComponent/$tarFile.name", tarFile)
+def artifactoryPullableURL = artifactoryHelpers.publish(artifactoryURL, artifactoryRepo, artifactoryKey, "$artifactoryComponent/$tarFile.name", tarFile)
 

@@ -1,6 +1,7 @@
 import java.security.MessageDigest
 import org.apache.http.entity.FileEntity
 import groovyx.net.http.*
+import groovy.json.JsonSlurper
 
 /************************************************************************************
  *
@@ -47,12 +48,17 @@ def publish(serverUrl, repo, apiKey, remoteFilePath, File localFile) {
     def filePath = "$repo/$remoteFilePath"
 
     def restClient = new RESTClient(url)
+    restClient.encoderRegistry = new EncoderRegistry(charset: "UTF-8")
     restClient.encoder.'application/zip' = this.&encodeZipFile
     def response = restClient.put(path: filePath, headers: ['X-JFrog-Art-Api' : apiKey, 'X-Checksum-Sha1' : sha1, 'X-Checksum-MD5' : md5], body: localFile, requestContentType: 'application/zip')
 
     assert response.isSuccess(), "Failed to publish file $localFile"
 
+    def jsonSlurper = new JsonSlurper()
+    def pullableURI = jsonSlurper.parseText(response.data.getText("UTF-8")).uri
+    assert pullableURI != null: "Artifactory did not return a URI"
     println "Successfully published file $localFile to $filePath"
+    return pullableURI
 }
 
 /**
