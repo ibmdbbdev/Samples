@@ -113,7 +113,8 @@ def startTime = sdf.format(date) as String
 // label as the name for the tar file
 def buildLabel = "build.$startTime"
 def tarFile = new File("$tempLoadDir/${buildLabel}.tar")
-def tarOut = ["sh", "-c", "cd $tempLoadDir && tar cf $tarFile *"].execute().text
+def process = ["sh", "-c", "tar cf $tarFile *"].execute([], tempLoadDir)
+assert process.waitFor() == 0, "Failed to package"
 
 // Set up the Artifactory information to publish the tar file
 def artifactoryURL = properties.get("artifactory.url") as String
