@@ -16,12 +16,12 @@ import groovyx.net.http.RESTClient
  *
  ************************************************************************************/
 
-def currentDir = new File(getClass().protectionDomain.codeSource.location.path).parent
+def scriptDir = new File(getClass().protectionDomain.codeSource.location.path).parent
 
-// load the Tools.groovy utility script
-def tools = loadScript(new File("$currentDir/Tools.groovy"))
+// Load the Tools.groovy utility script
+def tools = loadScript(new File("$scriptDir/Tools.groovy"))
 
-// parse command line arguments and load build properties
+// Parse command line arguments and load build properties
 def usage = "PublishLoadModule.groovy [options]"
 def opts = tools.parseArgs(args, usage)
 def properties = tools.loadProperties(opts)
@@ -29,7 +29,7 @@ def properties = tools.loadProperties(opts)
 def workDir = properties.workDir
 def loadDatasets = properties.loadDatasets
 
-//Retrieve the build report and parse the outputs from the build report
+// Retrieve the build report and parse the outputs from the build report
 def buildReportFile = new File("$workDir/BuildReport.json")
 assert buildReportFile.exists(), "$buildReportFile does not exist"
 
@@ -40,8 +40,8 @@ def executes = buildReport.records.findAll { record ->
 
 assert executes.size() > 0, "There are no outputs found in the build report"
 
-//If the user specifies the build property 'loadDatasets' then retrieves it
-//and filters out only outputs that match with the specified data sets.
+// If the user specifies the build property 'loadDatasets' then retrieves it
+// and filters out only outputs that match with the specified data sets.
 def loadDatasetArray  = loadDatasets?.split(",")
 def loadDatasetList = loadDatasetArray == null ? [] : Arrays.asList(loadDatasetArray)
 
@@ -62,13 +62,12 @@ executes.each { execute ->
 
 assert loadCount > 0, "There are no load modules to publish"
 
-//Create a temporary directory on zFS to copy the load modules from data sets to
+// Create a temporary directory on zFS to copy the load modules from data sets to
 def tempLoadDir = new File("$workDir/tempLoadDir")
 !tempLoadDir.exists() ?: tempLoadDir.deleteDir()
 tempLoadDir.mkdirs()
 
-//For each load modules, use CopyToHFS with option 'CopyMode.LOAD' to maintain
-//SSI and 
+// For each load module, use CopyToHFS with option 'CopyMode.LOAD' to maintain SSI
 CopyToHFS copy = new CopyToHFS().copyMode(CopyMode.LOAD)
 println "Number of load modules to publish: $loadCount"
 
@@ -92,21 +91,21 @@ def date = new Date()
 def sdf = new SimpleDateFormat("yyyyMMdd-HHmmss")
 def startTime = sdf.format(date) as String
 
-//Package the load files just copied into a tar file using the build
-//label as the name for the tar file.
+// Package the load files just copied into a tar file using the build
+// label as the name for the tar file.
 def buildGroup = "${properties.collection}" as String
 def buildLabel = "build.$startTime" as String
 def tarFile = new File("$tempLoadDir/${buildLabel}.tar")
 def tarOut = ["sh", "-c", "cd $tempLoadDir && tar cf $tarFile *"].execute().text
 
-//Set up the artifactory information to publish the tar file
+// Set up the artifactory information to publish the tar file
 def artifactoryURL = properties.get("artifactory.url") as String
 def artifactoryRepo = properties.get("artifactory.repo") as String
 def artifactoryKey = properties.get("artifactory.apiKey") as String
 def remotePath = "${buildGroup}/${tarFile.name}"
 
-//Call the ArtifactoryHelpers to publish the tar file
-File artifactoryHelpersFile = new File("$currentDir/ArtifactoryHelpers.groovy")
+// Call the ArtifactoryHelpers to publish the tar file
+File artifactoryHelpersFile = new File("$scriptDir/ArtifactoryHelpers.groovy")
 Class artifactoryHelpersClass = new GroovyClassLoader(getClass().getClassLoader()).parseClass(artifactoryHelpersFile)
 GroovyObject artifactoryHelpers = (GroovyObject) artifactoryHelpersClass.newInstance()
 artifactoryHelpers.publish(artifactoryURL, artifactoryRepo, artifactoryKey, remotePath, tarFile)
