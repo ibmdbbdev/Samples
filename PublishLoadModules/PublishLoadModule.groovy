@@ -71,20 +71,26 @@ def copy = new CopyToHFS()
 def copyModeMap = ["COPYBOOK": CopyMode.TEXT, "DBRM": CopyMode.BINARY, "LOAD": CopyMode.LOAD]
 println "Number of load modules to publish: $loadCount"
 
+// Create a file to specify datasets
+def datasetsCSV = new File("$tempLoadDir/Datasets.csv")
+
 // Create dedicated directories for datasets (e.g. load modules and DBRMs)
-loadDatasetToMembersMap.each { dataset, members ->
-    datasetDir = new File("$tempLoadDir/$dataset")
-    datasetDir.mkdirs()
+datasetsCSV.withWriter("UTF-8") { writer ->
+    loadDatasetToMembersMap.each { dataset, members ->
+        datasetDir = new File("$tempLoadDir/$dataset")
+        datasetDir.mkdirs()
 
-    currentCopyMode = copyModeMap[dataset.replaceAll(/.*\.([^.]*)/, "\$1")]
-    copy.setCopyMode(currentCopyMode)
-    copy.setDataset(dataset)
+        currentCopyMode = copyModeMap[dataset.replaceAll(/.*\.([^.]*)/, "\$1")]
+        copy.setCopyMode(currentCopyMode)
+        copy.setDataset(dataset)
 
-    members.each { member ->
-        println "Copying $dataset($member) to $datasetDir"
-        copy.member(member).file(new File("$datasetDir/$member")).copy()
+        members.each { member ->
+            println "Copying $dataset($member) to $datasetDir"
+            copy.member(member).file(new File("$datasetDir/$member")).copy()
+        }
+
+        writer.writeLine dataset
     }
-
 }
 
 // Append build report
