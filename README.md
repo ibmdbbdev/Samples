@@ -1,5 +1,5 @@
 # Samples for IBM Dependency Based Build
-**This repository is deprecated and no longer maintained. Please visit the [DBB Community Repository](https://github.com/IBM/dbb) for finding and sharing example DBB scripts.**
+**\*! This repository is deprecated and no longer maintained. Please visit the [DBB Community Repository](https://github.com/IBM/dbb) for finding and sharing example DBB scripts!\***
 
 ### Hello World First Script  
 Example Hello world program and build script created with hard coded values to show the simpliest form of using DBB to build z/OS programs.
