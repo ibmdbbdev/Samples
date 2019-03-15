@@ -104,26 +104,26 @@ new File(workDir).eachFileMatch(~/.*\.log/) { logFile ->
     copiedLogFile << logFile.text
 }
 
+// Get date for version label
 def date = new Date()
 def sdf = new SimpleDateFormat("yyyyMMdd-HHmmss")
 def startTime = sdf.format(date) as String
 
 // Package the load files just copied into a tar file using the build
-// label as the name for the tar file.
-def buildGroup = "${properties.collection}" as String
-def buildLabel = "build.$startTime" as String
+// label as the name for the tar file
+def buildLabel = "build.$startTime"
 def tarFile = new File("$tempLoadDir/${buildLabel}.tar")
 def tarOut = ["sh", "-c", "cd $tempLoadDir && tar cf $tarFile *"].execute().text
 
-// Set up the artifactory information to publish the tar file
+// Set up the Artifactory information to publish the tar file
 def artifactoryURL = properties.get("artifactory.url") as String
 def artifactoryRepo = properties.get("artifactory.repo") as String
 def artifactoryKey = properties.get("artifactory.apiKey") as String
-def remotePath = "${buildGroup}/${tarFile.name}"
+def artifactoryComponent = properties.get("collection") as String
 
 // Call the ArtifactoryHelpers to publish the tar file
 File artifactoryHelpersFile = new File("$scriptDir/ArtifactoryHelpers.groovy")
 Class artifactoryHelpersClass = new GroovyClassLoader(getClass().getClassLoader()).parseClass(artifactoryHelpersFile)
 GroovyObject artifactoryHelpers = (GroovyObject) artifactoryHelpersClass.newInstance()
-artifactoryHelpers.publish(artifactoryURL, artifactoryRepo, artifactoryKey, remotePath, tarFile)
+artifactoryHelpers.publish(artifactoryURL, artifactoryRepo, artifactoryKey, "$artifactoryComponent/$tarFile.name", tarFile)
 
