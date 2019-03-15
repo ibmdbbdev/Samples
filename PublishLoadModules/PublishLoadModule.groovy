@@ -96,6 +96,13 @@ datasetsCSV.withWriter("UTF-8") { writer ->
 // Append build report
 def exportBuildReport = new File("$tempLoadDir/BuildReport.json")
 exportBuildReport << buildReportFile.text
+// Append all log files
+def logDirectory = new File("$tempLoadDir/Logs")
+logDirectory.mkdirs()
+new File(workDir).eachFileMatch(~/.*\.log/) { logFile ->
+    copiedLogFile = new File("$logDirectory/$logFile.name")
+    copiedLogFile << logFile.text
+}
 
 def date = new Date()
 def sdf = new SimpleDateFormat("yyyyMMdd-HHmmss")
