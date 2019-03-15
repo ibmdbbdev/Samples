@@ -8,7 +8,6 @@ import com.ibm.dbb.build.*
 import com.ibm.dbb.build.DBBConstants.CopyMode
 import com.ibm.dbb.build.report.BuildReport
 import com.ibm.dbb.build.report.records.DefaultRecordFactory
-import groovyx.net.http.RESTClient
 
 /************************************************************************************
  * This script publishes the outputs generated from a build to an Artifactory
@@ -67,20 +66,25 @@ def tempLoadDir = new File("$workDir/tempLoadDir")
 !tempLoadDir.exists() ?: tempLoadDir.deleteDir()
 tempLoadDir.mkdirs()
 
-// For each load module, use CopyToHFS with option 'CopyMode.LOAD' to maintain SSI
-CopyToHFS copy = new CopyToHFS().copyMode(CopyMode.LOAD)
+// For each load module, use CopyToHFS with respective CopyMode option to maintain SSI
+def copy = new CopyToHFS()
+def copyModeMap = ["COPYBOOK": CopyMode.TEXT, "DBRM": CopyMode.BINARY, "LOAD": CopyMode.LOAD]
 println "Number of load modules to publish: $loadCount"
 
 // Create dedicated directories for datasets (e.g. load modules and DBRMs)
 loadDatasetToMembersMap.each { dataset, members ->
     datasetDir = new File("$tempLoadDir/$dataset")
     datasetDir.mkdirs()
+
+    currentCopyMode = copyModeMap[dataset.replaceAll(/.*\.([^.]*)/, "\$1")]
+    copy.setCopyMode(currentCopyMode)
+    copy.setDataset(dataset)
+
     members.each { member ->
-        def fullyQualifiedDsn = "$dataset($member)"
-        def file = new File(datasetDir, member)
-        copy.dataset(dataset).member(member).file(file).copy()
         println "Copying $dataset($member) to $datasetDir"
+        copy.member(member).file(new File("$datasetDir/$member")).copy()
     }
+
 }
 
 // Append build report
