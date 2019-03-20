@@ -1,6 +1,7 @@
 import java.security.MessageDigest
 import org.apache.http.entity.FileEntity
 import groovyx.net.http.*
+import groovy.json.JsonSlurper
 
 /************************************************************************************
  *
@@ -29,31 +30,35 @@ import groovyx.net.http.*
 /**
  * Publish a file from HFS to an artifactory repository at location specified in remoteFilePath
  */
-def publish(serverUrl, repo, apiKey, remoteFilePath, File localFile)
-{
+def publish(serverUrl, repo, apiKey, remoteFilePath, File localFile) {
     //Validate to make sure all required fields are specified
     assert serverUrl != null, "Need to specify a valid URL to artifactory server"
     assert repo != null, "Need to specify a valid artifactory repository"
     assert apiKey != null, "Need to specify a valid API key to authenticate with $repo"
     assert remoteFilePath != null, "Need to specify the path of the source file"
     assert localFile != null && localFile.exists(), "Target local file must exist"
-    
+
     //Artifactory URL must end with '/'
     def url = serverUrl.endsWith('/') ? serverUrl : serverUrl + '/'
 
     //Create SHA1 and MD5 checksums to be published along with the file
-    def sha1 = getChecksum(localFile)
+    def sha1 = getChecksum(localFile, "SHA1")
     def md5 = getChecksum(localFile, "MD5")
-       
-    def filePath = "$repo/$remoteFilePath" 
-    
+
+    def filePath = "$repo/$remoteFilePath"
+
     def restClient = new RESTClient(url)
+    restClient.encoderRegistry = new EncoderRegistry(charset: "UTF-8")
     restClient.encoder.'application/zip' = this.&encodeZipFile
     def response = restClient.put(path: filePath, headers: ['X-JFrog-Art-Api' : apiKey, 'X-Checksum-Sha1' : sha1, 'X-Checksum-MD5' : md5], body: localFile, requestContentType: 'application/zip')
-    
+
     assert response.isSuccess(), "Failed to publish file $localFile"
-    
-    println "Successfully publish file $localFile to $filePath"
+
+    def jsonSlurper = new JsonSlurper()
+    def pullableURI = jsonSlurper.parseText(response.data.getText("UTF-8")).uri
+    assert pullableURI != null: "Artifactory did not return a URI"
+    println "Successfully published file $localFile to $filePath"
+    return pullableURI
 }
 
 /**
@@ -86,8 +91,8 @@ def download(serverUrl, repo, apiKey, remoteFilePath, File localFile)
     //the transfer is complete
     def expectedSha1 = response.headers['X-Checksum-Sha1'].value
     def expectedMd5 = response.headers['X-Checksum-Md5'].value    
-    def actualSha1 = getChecksum(localFile)
-    def actualMd5 = getChecksum(localFile, "MD5")    
+    def actualSha1 = getChecksum(localFile, "SHA1")
+    def actualMd5 = getChecksum(localFile, "MD5")
     assert actualSha1 == expectedSha1 && actualMd5 == expectedMd5, "The downloaded file $localFile does not have the right checksum"
     
     println "Successfully download $filePath to $localFile"
@@ -128,7 +133,11 @@ def getChecksum(File file, type = 'SHA1')
     
     def digest = MessageDigest.getInstance(type)
     digest.update(file.bytes)
-    return new BigInteger(1,digest.digest()).toString(16)
+    switch (type) {
+    case "SHA1": return new BigInteger(1,digest.digest()).toString(16).padLeft(40, '0'); break
+    case "MD5": return new BigInteger(1,digest.digest()).toString(16).padLeft(32, '0'); break
+    default: println "Unsupported type"
+    }
 }
 
 def static encodeZipFile(Object data) throws UnsupportedEncodingException
@@ -137,3 +146,4 @@ def static encodeZipFile(Object data) throws UnsupportedEncodingException
     entity.setContentType('application/zip');
     return entity
 }
+
